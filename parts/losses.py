@@ -1,0 +1,28 @@
+import torch
+
+from parameterless import Parameterless
+from constants import EPSILON
+
+
+class MAE(Parameterless):
+	def forward(self, y, expected):
+		return torch.mean(torch.abs(y - expected))
+
+	def backward(self, y, expected):
+		return torch.sign(y - expected) / y.numel()
+
+
+class MSE(Parameterless):
+	def forward(self, y, expected):
+		return torch.mean(torch.square(y - expected))
+
+	def backward(self, y, expected):
+		return 2 * (y - expected) / y.numel()
+
+
+class CrossEntropy(Parameterless):
+	def forward(self, y, expected):
+		return torch.mean(-expected * torch.log(y + EPSILON))
+
+	def backward(self, y, expected):
+		return -expected / (y + EPSILON) / y.numel()

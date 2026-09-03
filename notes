@@ -1,0 +1,8 @@
+models accept created objects (ReLU(), not ReLU)
+forward accepts prepared input (use x = prepare() before if needed)
+prepare() is a separate function
+loss must be queried after forward() or predict()
+passed x must not be changed (no x = 1, later x = 2)
+x and y are saved in forward, but not in backward
+forward() and predict() store x and y
+class Parameterless defines from_obj and to_obj
