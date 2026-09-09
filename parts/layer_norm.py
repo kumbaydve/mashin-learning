@@ -1,0 +1,54 @@
+import torch
+
+from universal import NoDropout
+from universal import Optimizable
+from constants import EPSILON
+from parts.optimizers import Optimizer
+
+
+class LayerNorm(Optimizable, NoDropout):
+	def __init__(self, dim, optimizer):
+		self.dim = dim
+		self.gamma = torch.ones(dim)
+		self.beta = torch.zeros(dim)
+		self.optimizer = optimizer
+
+		self.optimizer.connect(self, 'gamma', 'beta')
+
+	def forward(self, x):
+		self.x = x
+		mean = torch.mean(x, dim=-1, keepdim=True)
+		var = torch.var(x, dim=-1, keepdim=True)
+		self.std = torch.sqrt(var + EPSILON)
+
+		self.norm = (x - mean) / self.std
+		self.y = self.gamma * self.norm + self.beta
+
+		return self.y
+
+	def backward(self, d_in):
+		self.optimizer.backward(
+			gamma = torch.sum(d_in * self.norm, dim=0),
+			beta = torch.sum(d_in, dim=0)
+		)
+
+		d_pre_norm = d_in * self.gamma / self.std
+
+		return d_pre_norm - torch.mean(d_pre_norm, dim=-1, keepdim=True) - (self.norm * torch.sum(d_pre_norm * self.norm, dim=-1, keepdim=True)) / self.x.shape[-1]
+
+	def to_obj(self, save_gradients=False):
+		return {
+			'dim': self.dim,
+			'gamma': self.gamma.tolist(),
+			'beta': self.beta.tolist(),
+			'optimizer': self.optimizer.to_obj(save_gradients=save_gradients)
+		}
+
+	@staticmethod
+	def from_obj(obj, load_gradients=True):
+		res = LayerNorm(obj['dim'], Optimizer.from_obj(obj['optimizer'], load_gradients=load_gradients))
+
+		res.gamma = torch.tensor(obj['gamma'])
+		res.beta = torch.tensor(obj['beta'])
+
+		return res

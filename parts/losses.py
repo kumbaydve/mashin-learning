@@ -1,6 +1,6 @@
 import torch
 
-from parameterless import Parameterless
+from universal import Parameterless
 from constants import EPSILON
 
 

@@ -6,3 +6,4 @@ passed x must not be changed (no x = 1, later x = 2)
 x and y are saved in forward, but not in backward
 forward() and predict() store x and y
 class Parameterless defines from_obj and to_obj
+class Optimizable defines drop_gradient() and descent()

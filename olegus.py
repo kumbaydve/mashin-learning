@@ -2,9 +2,13 @@ import torch
 
 import json
 
-from parameterless import Parameterless
+from universal import Parameterless
 from utility.utility import get_batch_range, get_slice
-from parts.single_layer_perceptron import SingleLayerPerceptron
+
+from parts.perceptron import Perceptron
+from parts.layer_norm import LayerNorm
+from parts.single_head_attention import SingleHeadAttention
+from parts.residual import Residual
 
 
 class Olegus:

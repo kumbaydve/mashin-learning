@@ -2,13 +2,14 @@ import torch
 
 import math
 
+from universal import Optimizable
 from parts.activations import Linear, ReLU, SiLU, Softplus, GELU
 from parts.optimizers import Optimizer
-from parameterless import Parameterless
+from universal import Parameterless
 from constants import FLOAT
 
 
-class SingleLayerPerceptron:
+class Perceptron(Optimizable):
 	def __init__(self, in_dim, out_dim, activation, optimizer, dropout_p=0):
 		self.in_dim = in_dim
 		self.out_dim = out_dim
@@ -56,12 +57,6 @@ class SingleLayerPerceptron:
 
 		return d_z @ self.w.T
 
-	def drop_gradient(self):
-		self.optimizer.drop_gradient()
-
-	def descent(self):
-		self.optimizer.descent()
-
 	def to_obj(self, save_gradients=False):
 		return {
 			'in_dim': self.in_dim,
@@ -75,7 +70,7 @@ class SingleLayerPerceptron:
 
 	@staticmethod
 	def from_obj(obj, load_gradients=True):
-		res = SingleLayerPerceptron(obj['in_dim'], obj['out_dim'], Parameterless.from_obj(obj['activation']), Optimizer.from_obj(obj['optimizer'], load_gradients=load_gradients), dropout_p=obj['dropout_p'])
+		res = Perceptron(obj['in_dim'], obj['out_dim'], Parameterless.from_obj(obj['activation']), Optimizer.from_obj(obj['optimizer'], load_gradients=load_gradients), dropout_p=obj['dropout_p'])
 
 		res.w = torch.tensor(obj['w'])
 		res.b = torch.tensor(obj['b'])
