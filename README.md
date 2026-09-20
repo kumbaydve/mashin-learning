@@ -3,15 +3,10 @@ OLEGUS
 
 
 ### 1. Introduction
-This project consists of classes and utility, that can be assembled into a trainable model.
+This project contains classes and utility, that can be assembled into a trainable model. That model's name is Olegus
 
-### 2. Content
-- Models (like perceptron and multi head attention) are in `/parts`
-- Utility (preparing and analyzing data) is in `/utility`
-- Files without special folder are too abstract (constants, universal classes and examples)
-
-### 3. Universal
-File `universal.py` contains:
-- Class Model. Does nothing, used to search class names
-- Class Optimizable. Defines `drop_gradient()` and `descent()` as `self.optimizer`'s corresponding methods
-- Class NoDropout. Defines `predict()` as `forward()`
+### 2. Get started
+1. Check `examples.py`
+2. Cycle through `/parts`. It has all the model's parts like `Perceptron`, `Residual` and `MultiHeadAttention`
+3. See what `/utility` is available
+4. Go to `olegus.py` and see, how the model is trained with `.train()` and saved with `.save()`

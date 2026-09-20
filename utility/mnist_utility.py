@@ -24,7 +24,7 @@ def get_num_of_correct(y, expected):
 	predicted = predict(y)
 	correct = torch.argmax(expected, dim=-1)
 
-	return torch.sum(torch.where(predicted == correct, 1, 0))
+	return torch.sum((predicted == correct).to(INT))
 
 
 losses = torch.empty(0)

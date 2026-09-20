@@ -2,61 +2,30 @@ import torch
 
 import json
 
-from universal import Parameterless
+from universal import Model, HasOptimizableModel
 from utility.utility import get_batch_range, get_slice
 
-from parts.perceptron import Perceptron
-from parts.layer_norm import LayerNorm
-from parts.single_head_attention import SingleHeadAttention
-from parts.residual import Residual
 
-
-class Olegus:
-	def __init__(self, *models, loss_function=None):
-		self.models = models
+class Olegus(HasOptimizableModel):
+	def __init__(self, model, loss_function=None):
+		self.model = model
 		self.loss_function = loss_function
 
-	# processes prepared input with dropout, stores x and y
 	def forward(self, x):
-		self.x = x
-		self.y = self.models[0].forward(x)
-
-		for model in self.models[1:]:
-			self.y = model.forward(self.y)
-
+		self.y = self.model.forward(x)
 		return self.y
 
-	# processes prepared input without dropout, stores x and y
 	def predict(self, x):
-		self.x = x
-		self.y = self.models[0].predict(x)
-
-		for model in self.models[1:]:
-			self.y = model.predict(self.y)
-
+		self.y = self.model.predict(x)
 		return self.y
 
-	# returns loss_function, stores loss, forward() or predict() must be called before
 	def get_loss(self, expected):
-		self.loss = self.loss_function.forward(self.y, expected)
-		return self.loss
+		return self.loss_function.forward(self.y, expected)
 
-	# returns input gradient, stores nothing, forward() must be called before
 	def backward(self, expected):
 		d_in = self.loss_function.backward(self.y, expected)
 
-		for model in self.models[::-1]:
-			d_in = model.backward(d_in)
-
-		return d_in
-
-	def drop_gradient(self):
-		for model in self.models:
-			model.drop_gradient()
-
-	def descent(self):
-		for model in self.models:
-			model.descent()
+		return self.model.backward(d_in)
 
 	def train(self, epochs, batch_size, x_train, y_train, x_test=None, y_test=None, print_losses=True, print_epochs=True, tester=None):
 		test_condition = (x_test is not None) and (y_test is not None) and (not tester)
@@ -89,19 +58,18 @@ class Olegus:
 			return losses_test
 
 	def to_obj(self, save_gradients=False):
-		res = {
-			'models': [(model.__class__.__name__, model.to_obj(save_gradients=save_gradients)) for model in self.models],
+		return {
+			'name': self.__class__.__name__,
+			'model': self.model.to_obj(save_gradients=save_gradients),
 			'loss_function': self.loss_function.to_obj()
 		}
 
-		return res
-
 	@staticmethod
 	def from_obj(obj, load_gradients=True):
-		models = [globals()[model[0]].from_obj(model[1], load_gradients=load_gradients) for model in obj['models']]
-		loss_function = Parameterless.from_obj(obj['loss_function'])
+		model = Model.from_obj(obj['model'], load_gradients=load_gradients)
+		loss_function = Model.from_obj(obj['loss_function'])
 
-		return Olegus(*models, loss_function=loss_function)
+		return Olegus(model, loss_function=loss_function)
 
 	def save(self, file_name, save_gradients=False):
 		with open(file_name, 'w') as file:

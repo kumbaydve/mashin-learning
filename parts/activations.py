@@ -1,9 +1,9 @@
 import torch
 
-from universal import Parameterless
+from universal import Model
 
 
-class Linear(Parameterless):
+class Linear(Model):
 	def forward(self, x):
 		return x
 
@@ -11,7 +11,7 @@ class Linear(Parameterless):
 		return d_in
 
 
-class ReLU(Parameterless):
+class ReLU(Model):
 	def forward(self, x):
 		self.x = x
 		return torch.maximum(torch.tensor(0), x)
@@ -20,7 +20,7 @@ class ReLU(Parameterless):
 		return torch.where(self.x > 0, d_in, 0)
 
 
-class Sigmoid(Parameterless):
+class Sigmoid(Model):
 	def forward(self, x):
 		self.s = 1 / (1 + torch.exp(-x))
 		return self.s
@@ -29,7 +29,7 @@ class Sigmoid(Parameterless):
 		return d_in * self.s * (1 - self.s)
 
 
-class SiLU(Parameterless):
+class SiLU(Model):
 	def forward(self, x):
 		self.x = x
 		self.s = 1 / (1 + torch.exp(-x))
@@ -40,7 +40,7 @@ class SiLU(Parameterless):
 		return d_in * self.s * (1 + self.x - self.xs)
 
 
-class Softplus(Parameterless):
+class Softplus(Model):
 	def forward(self, x):
 		self.exp = torch.exp(x)
 		return torch.log(1 + self.exp)
@@ -49,7 +49,7 @@ class Softplus(Parameterless):
 		return d_in * self.exp / (1 + self.exp)
 
 
-class GELU(Parameterless):
+class GELU(Model):
 	def forward(self, x):
 		self.x = x
 		self.x_plus_x_cubed = 0.7978845608 * (x + 0.044715 * x ** 3)
@@ -59,7 +59,7 @@ class GELU(Parameterless):
 		return d_in * 0.5 * ((1 + torch.tanh(self.x_plus_x_cubed)) + self.x / (torch.cosh(self.x_plus_x_cubed) ** 2) * 0.7978845608 * (1 + 0.134145 * self.x ** 2))
 
 
-class Softmax(Parameterless):
+class Softmax(Model):
 	def forward(self, x):
 		exp = torch.exp(x - torch.amax(x, dim=-1, keepdim=True))
 		self.s = exp / torch.sum(exp, dim=-1, keepdim=True)

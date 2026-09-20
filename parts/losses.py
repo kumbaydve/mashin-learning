@@ -1,10 +1,10 @@
 import torch
 
-from universal import Parameterless
+from universal import Model
 from constants import EPSILON
 
 
-class MAE(Parameterless):
+class MAE(Model):
 	def forward(self, y, expected):
 		return torch.mean(torch.abs(y - expected))
 
@@ -12,7 +12,7 @@ class MAE(Parameterless):
 		return torch.sign(y - expected) / y.numel()
 
 
-class MSE(Parameterless):
+class MSE(Model):
 	def forward(self, y, expected):
 		return torch.mean(torch.square(y - expected))
 
@@ -20,7 +20,7 @@ class MSE(Parameterless):
 		return 2 * (y - expected) / y.numel()
 
 
-class CrossEntropy(Parameterless):
+class CrossEntropy(Model):
 	def forward(self, y, expected):
 		return torch.mean(-expected * torch.log(y + EPSILON))
 

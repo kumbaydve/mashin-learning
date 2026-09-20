@@ -1,10 +1,11 @@
 import torch
 
+from universal import Model
 from utility.utility import search_subclasses
 from constants import EPSILON
 
 
-class Optimizer:
+class Optimizer(Model):
 	def connect(self, obj, *parameters):
 		self.obj = obj
 
@@ -21,7 +22,10 @@ class Optimizer:
 
 	def backward(self, **gradients):
 		for parameter in gradients:
-			self.gradients[parameter] += gradients[parameter]
+			if isinstance(gradients[parameter], tuple):
+				self.gradients[parameter][gradients[parameter][0]] += gradients[parameter][1]
+			else:
+				self.gradients[parameter] += gradients[parameter]
 
 	def drop_gradient(self):
 		for parameter in self.gradients:
@@ -46,10 +50,10 @@ class Optimizer:
 		for parameter in obj['gradients']:
 			res.gradients[parameter] = torch.tensor(obj['gradients'][parameter])
 
-	@staticmethod
-	def from_obj(obj, load_gradients=True):
-		optimizer_class = search_subclasses(Optimizer, obj['name'])
-		return optimizer_class.from_obj(obj, load_gradients=load_gradients)
+	#@staticmethod
+	#def from_obj(obj, load_gradients=True):
+	#	optimizer_class = search_subclasses(Optimizer, obj['name'])
+	#	return optimizer_class.from_obj(obj, load_gradients=load_gradients)
 
 
 class SGD(Optimizer):
@@ -62,7 +66,7 @@ class SGD(Optimizer):
 
 	def to_obj(self, save_gradients=False):
 		res = {
-			'name': 'SGD',
+			'name': self.__class__.__name__,
 			'alpha': self.alpha
 		}
 
@@ -95,7 +99,7 @@ class Step(Optimizer):
 
 	def to_obj(self, save_gradients=False):
 		res = {
-			'name': 'Step',
+			'name': self.__class__.__name__,
 			'alpha': self.alpha,
 			'd': self.d,
 			'r': self.r
@@ -148,7 +152,7 @@ class Adam(Optimizer):
 
 	def to_obj(self, save_gradients=False):
 		res = {
-			'name': 'Adam',
+			'name': self.__class__.__name__,
 			'alpha': self.alpha,
 			'beta_1': self.beta_1,
 			'beta_2': self.beta_2

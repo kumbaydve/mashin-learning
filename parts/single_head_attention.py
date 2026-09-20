@@ -3,10 +3,10 @@ import math
 
 from parts.activations import Softmax
 from parts.optimizers import Optimizer
-from universal import Optimizable, NoDropout
+from universal import Optimizable, NoDropout, Model
 
 
-class SingleHeadAttention(Optimizable, NoDropout):
+class SingleHeadAttention(Model, Optimizable, NoDropout):
 	def __init__(self, embedding_d, head_d, seq_len, optimizer):
 		self.embedding_d = embedding_d
 		self.head_d = head_d
@@ -29,13 +29,12 @@ class SingleHeadAttention(Optimizable, NoDropout):
 		self.k = x @ self.w_k
 		self.v = x @ self.w_v
 
-		self.scores = self.q @ self.k.T * self.sqrt_head_d
-		self.scores[self.score_mask] = -torch.inf
+		scores = self.q @ self.k.T * self.sqrt_head_d
+		scores[self.score_mask] = -torch.inf
 
-		self.attention = self.activation.forward(self.scores)
-		self.y = self.attention @ self.v
+		self.attention = self.activation.forward(scores)
 
-		return self.y
+		return self.attention @ self.v
 
 	def backward(self, d_in):
 		d_activation = self.activation.backward(d_in @ self.v.T) * self.sqrt_head_d
@@ -55,6 +54,7 @@ class SingleHeadAttention(Optimizable, NoDropout):
 
 	def to_obj(self, save_gradients=False):
 		return {
+			'name': self.__class__.__name__,
 			'embedding_d': self.embedding_d,
 			'head_d': self.head_d,
 			'seq_len': self.seq_len,

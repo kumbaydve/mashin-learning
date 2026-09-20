@@ -3,14 +3,17 @@ from parts.activations import SiLU, Softmax
 from parts.losses import CrossEntropy
 from parts.optimizers import Adam
 from parts.perceptron import Perceptron
+from parts.sequence import Sequence
 
 from utility.mnist_utility import get_x_y, mnist_tester
 
 
 olegus = Olegus(
-	Perceptron(28 * 28, 20, SiLU(), Adam(0.000_1, 0.9, 0.999), dropout_p=0.1),
-	Perceptron(20, 10, SiLU(), Adam(0.000_01, 0.9, 0.999), dropout_p=0.5),
-	Perceptron(10, 10, Softmax(), Adam(0.001, 0.9, 0.999)),
+	Sequence(
+		Perceptron(28 * 28, 20, SiLU(), Adam(0.000_1, 0.9, 0.999), dropout_p=0.1),
+		Perceptron(20, 10, SiLU(), Adam(0.000_01, 0.9, 0.999), dropout_p=0.5),
+		Perceptron(10, 10, Softmax(), Adam(0.001, 0.9, 0.999))
+	),
 	loss_function=CrossEntropy()
 )
 

@@ -1,12 +1,11 @@
 import torch
 
-from universal import NoDropout
-from universal import Optimizable
+from universal import NoDropout, Model, Optimizable
 from constants import EPSILON
 from parts.optimizers import Optimizer
 
 
-class LayerNorm(Optimizable, NoDropout):
+class LayerNorm(Model, Optimizable, NoDropout):
 	def __init__(self, dim, optimizer):
 		self.dim = dim
 		self.gamma = torch.ones(dim)
@@ -22,9 +21,8 @@ class LayerNorm(Optimizable, NoDropout):
 		self.std = torch.sqrt(var + EPSILON)
 
 		self.norm = (x - mean) / self.std
-		self.y = self.gamma * self.norm + self.beta
 
-		return self.y
+		return self.gamma * self.norm + self.beta
 
 	def backward(self, d_in):
 		self.optimizer.backward(
@@ -38,6 +36,7 @@ class LayerNorm(Optimizable, NoDropout):
 
 	def to_obj(self, save_gradients=False):
 		return {
+			'name': self.__class__.__name__,
 			'dim': self.dim,
 			'gamma': self.gamma.tolist(),
 			'beta': self.beta.tolist(),

@@ -2,14 +2,13 @@ import torch
 
 import math
 
-from universal import Optimizable
+from universal import Optimizable, Model
 from parts.activations import Linear, ReLU, SiLU, Softplus, GELU
 from parts.optimizers import Optimizer
-from universal import Parameterless
 from constants import FLOAT
 
 
-class Perceptron(Optimizable):
+class Perceptron(Model, Optimizable):
 	def __init__(self, in_dim, out_dim, activation, optimizer, dropout_p=0):
 		self.in_dim = in_dim
 		self.out_dim = out_dim
@@ -29,20 +28,16 @@ class Perceptron(Optimizable):
 
 	def forward(self, x):
 		self.x = x
-		self.z = x @ self.w + self.b
-		self.y = self.activation.forward(self.z)
+		y = self.activation.forward(x @ self.w + self.b)
 
 		if self.dropout_p:
-			self.mask = (torch.rand_like(self.y) >= self.dropout_p).to(FLOAT) / (1 - self.dropout_p)
-			self.y *= self.mask
+			self.mask = (torch.rand_like(y) >= self.dropout_p).to(FLOAT) / (1 - self.dropout_p)
+			y *= self.mask
 
-		return self.y
+		return y
 
 	def predict(self, x):
-		self.x = x
-		self.z = x @ self.w + self.b
-		self.y = self.activation.forward(self.z)
-		return self.y
+		return self.activation.forward(x @ self.w + self.b)
 
 	def backward(self, d_in):
 		if self.dropout_p:
@@ -51,7 +46,8 @@ class Perceptron(Optimizable):
 			d_z = self.activation.backward(d_in)
 
 		self.optimizer.backward(
-			w = self.x.T @ d_z,
+			#w = self.x.T @ d_z,
+			w = torch.einsum('...i,...j->ij', self.x.T, d_z),
 			b = torch.sum(d_z, dim=0)
 		)
 
@@ -59,6 +55,7 @@ class Perceptron(Optimizable):
 
 	def to_obj(self, save_gradients=False):
 		return {
+			'name': self.__class__.__name__,
 			'in_dim': self.in_dim,
 			'out_dim': self.out_dim,
 			'w': self.w.tolist(),
@@ -70,7 +67,7 @@ class Perceptron(Optimizable):
 
 	@staticmethod
 	def from_obj(obj, load_gradients=True):
-		res = Perceptron(obj['in_dim'], obj['out_dim'], Parameterless.from_obj(obj['activation']), Optimizer.from_obj(obj['optimizer'], load_gradients=load_gradients), dropout_p=obj['dropout_p'])
+		res = Perceptron(obj['in_dim'], obj['out_dim'], Model.from_obj(obj['activation']), Optimizer.from_obj(obj['optimizer'], load_gradients=load_gradients), dropout_p=obj['dropout_p'])
 
 		res.w = torch.tensor(obj['w'])
 		res.b = torch.tensor(obj['b'])

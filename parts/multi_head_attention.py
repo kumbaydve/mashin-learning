@@ -3,10 +3,10 @@ import math
 
 from parts.optimizers import Optimizer
 from parts.single_head_attention import SingleHeadAttention
-from universal import Optimizable, NoDropout
+from universal import Optimizable, NoDropout, Model
 
 
-class MultiHeadAttention(Optimizable, NoDropout):
+class MultiHeadAttention(Model, Optimizable, NoDropout):
 	def __init__(self, embedding_d, head_d, seq_len, optimizer, heads):
 		self.embedding_d = embedding_d
 		self.head_d = head_d
@@ -20,17 +20,14 @@ class MultiHeadAttention(Optimizable, NoDropout):
 		self.optimizer.connect(self, 'w_out')
 
 	def forward(self, x):
-		self.x = x
-
 		head_outputs = []
 
 		for head in self.heads:
 			head_outputs.append(head.forward(x))
 
 		self.concat = torch.concatenate(head_outputs, dim=-1)
-		self.y = self.concat @ self.w_out
 
-		return self.y
+		return self.concat @ self.w_out
 
 	def backward(self, d_in):
 		d_concat = d_in @ self.w_out.T
@@ -49,6 +46,7 @@ class MultiHeadAttention(Optimizable, NoDropout):
 
 	def to_obj(self, save_gradients=False):
 		return {
+			'name': self.__class__.__name__,
 			'embedding_d': self.embedding_d,
 			'head_d': self.head_d,
 			'seq_len': self.seq_len,

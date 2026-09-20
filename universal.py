@@ -1,19 +1,21 @@
 from utility.utility import search_subclasses
 
 
-class Model: ...
-
-
-class Parameterless:
+class Model:
 	def to_obj(self):
-		return self.__class__.__name__
+		return {
+			'name': self.__class__.__name__
+		}
 
 	@staticmethod
-	def from_obj(obj):
-		found = search_subclasses(Parameterless, obj)
+	def from_obj(obj, load_gradients=False):
+		found = search_subclasses(Model, obj['name'])
 
 		if found:
-			return found()
+			if getattr(found, 'from_obj') == Model.from_obj:
+				return found()
+			else:
+				return found.from_obj(obj, load_gradients=load_gradients)
 
 		raise KeyError('Class not found')
 
@@ -24,6 +26,22 @@ class Optimizable:
 
 	def descent(self):
 		self.optimizer.descent()
+
+
+class HasOptimizableModel:
+	def drop_gradient(self):
+		self.model.drop_gradient()
+
+	def descent(self):
+		self.model.descent()
+
+
+class HasForwardableModel:
+	def forward(self, x):
+		return self.model.forward(x)
+
+	def backward(self, d_in):
+		return self.model.backward(d_in)
 
 
 class NoDropout:
