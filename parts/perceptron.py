@@ -1,5 +1,4 @@
 import torch
-
 import math
 
 from universal import Optimizable, Model
@@ -46,8 +45,7 @@ class Perceptron(Model, Optimizable):
 			d_z = self.activation.backward(d_in)
 
 		self.optimizer.backward(
-			#w = self.x.T @ d_z,
-			w = torch.einsum('...i,...j->ij', self.x.T, d_z),
+			w = self.x.T @ d_z,
 			b = torch.sum(d_z, dim=0)
 		)
 

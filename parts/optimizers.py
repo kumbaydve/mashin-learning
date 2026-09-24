@@ -1,7 +1,6 @@
 import torch
 
 from universal import Model
-from utility.utility import search_subclasses
 from constants import EPSILON
 
 
@@ -49,11 +48,6 @@ class Optimizer(Model):
 
 		for parameter in obj['gradients']:
 			res.gradients[parameter] = torch.tensor(obj['gradients'][parameter])
-
-	#@staticmethod
-	#def from_obj(obj, load_gradients=True):
-	#	optimizer_class = search_subclasses(Optimizer, obj['name'])
-	#	return optimizer_class.from_obj(obj, load_gradients=load_gradients)
 
 
 class SGD(Optimizer):

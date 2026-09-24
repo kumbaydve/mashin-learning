@@ -1,12 +1,10 @@
 import torch
 
-import json
-
-from universal import Model, HasOptimizableModel
+from universal import Model, HasOptimizableModel, Savable
 from utility.utility import get_batch_range, get_slice
 
 
-class Olegus(HasOptimizableModel):
+class Olegus(Model, HasOptimizableModel, Savable):
 	def __init__(self, model, loss_function=None):
 		self.model = model
 		self.loss_function = loss_function
@@ -36,8 +34,10 @@ class Olegus(HasOptimizableModel):
 			if print_epochs:
 				print('EPOCH', epoch)
 
+			shuffled_ixs = torch.randperm(x_train.shape[0])
+
 			for batch in get_batch_range(x_train, batch_size):
-				ixs = get_slice(batch, batch_size)
+				ixs = shuffled_ixs[get_slice(batch, batch_size)]
 
 				self.drop_gradient()
 				self.forward(x_train[ixs, :])
@@ -70,12 +70,3 @@ class Olegus(HasOptimizableModel):
 		loss_function = Model.from_obj(obj['loss_function'])
 
 		return Olegus(model, loss_function=loss_function)
-
-	def save(self, file_name, save_gradients=False):
-		with open(file_name, 'w') as file:
-			json.dump(self.to_obj(save_gradients=save_gradients), file)
-
-	@staticmethod
-	def load(file_name, load_gradients=True):
-		with open(file_name, 'r') as file:
-			return Olegus.from_obj(json.load(file), load_gradients=load_gradients)

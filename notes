@@ -1,7 +1,0 @@
-models accept created objects (ReLU(), not ReLU)
-forward accepts prepared input (use x = prepare() before if needed)
-prepare() is a separate function
-loss must be queried after forward() or predict()
-x and y are saved in forward, but not in backward
-class Parameterless defines from_obj and to_obj
-class Optimizable defines drop_gradient() and descent()

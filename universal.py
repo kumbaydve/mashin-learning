@@ -1,3 +1,5 @@
+import json
+
 from utility.utility import search_subclasses
 
 
@@ -47,3 +49,14 @@ class HasForwardableModel:
 class NoDropout:
 	def predict(self, x):
 		return self.forward(x)
+
+
+class Savable:
+	def save(self, file_name, save_gradients=False):
+		with open(file_name, 'w') as file:
+			json.dump(self.to_obj(save_gradients=save_gradients), file)
+
+	@staticmethod
+	def load(file_name, load_gradients=True):
+		with open(file_name, 'r') as file:
+			return Model.from_obj(json.load(file), load_gradients=load_gradients)

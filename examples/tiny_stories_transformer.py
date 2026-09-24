@@ -9,20 +9,31 @@ from utility.transformer_utility import str_to_tokens, tokens_to_ixs, ixs_to_sub
 	generate_from_tokens
 
 
+dictionary = set()
+
+with open('TinyStories-train.txt', 'r', encoding='utf-8') as file:
+	while line := file.readline():
+		line = line.strip().lower()
+
+		for token in str_to_tokens(line, SPECIAL_CHARS, SPACE_CHARS, ('<|endoftext|>',)):
+			dictionary.add(token)
+
+dictionary = list(dictionary)
+
+with open('tiny_stories_dictionary.json', 'w', encoding='utf-8') as file:
+	json.dump(dictionary, file)
+
+
 text = ''
 
-with open('datasets/TinyStories-train.txt', 'r', encoding='utf-8') as file:
-	for _ in range(1_000):
+with open('TinyStories-train.txt', 'r', encoding='utf-8') as file:
+	for _ in range(3_000):
 		line = file.readline().strip()
 		text += line + ' '
 
 text = text.lower().strip()
 tokens = str_to_tokens(text, SPECIAL_CHARS, SPACE_CHARS, ('<|endoftext|>',))
 
-with open('datasets/tiny_stories_dictionary.json', 'r', encoding='utf-8') as file:
-	dictionary = json.load(file)
-
-print(len(dictionary))
 
 embedding_d = 128 + 64
 head_d = 32
@@ -31,7 +42,7 @@ perceptron_d = 512
 layer_n = 2
 
 olegus = OlegusTransformer(dictionary, embedding_d, head_d, perceptron_d, seq_len, layer_n, Adam, (0.001, 0.9, 0.999))
-#olegus = OlegusTransformer.load('olegus_tra_tiny_stories.json', load_gradients=False)
+
 ixs = tokens_to_ixs(tokens, olegus)
 seqs = ixs_to_subsequences(ixs, seq_len)
 nexts = ixs_to_next_ixs(ixs, seq_len)
@@ -79,4 +90,4 @@ for epoch in range(1, 2 + 1):
 
 		print()
 
-#olegus.save('olegus_tra_tiny_stories.json', save_gradients=True)
+olegus.save('olegus_transformer_tiny_stories.json', save_gradients=True)

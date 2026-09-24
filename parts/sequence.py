@@ -1,5 +1,4 @@
 from universal import Model
-from utility.utility import search_subclasses
 
 
 class Sequence(Model):
