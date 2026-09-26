@@ -1,3 +1,6 @@
+# EINSUM
+
+
 import torch
 import math
 
@@ -25,32 +28,32 @@ class SingleHeadAttention(Model, Optimizable, NoDropout):
 
 	def forward(self, x):
 		self.x = x
-		self.q = x @ self.w_q
-		self.k = x @ self.w_k
-		self.v = x @ self.w_v
+		self.q = x @ self.w_q # bse, eh -> bsh
+		self.k = x @ self.w_k # bse, eh -> bsh
+		self.v = x @ self.w_v # bse, eh -> bsh
 
-		scores = self.q @ self.k.T * self.sqrt_head_d
-		scores[self.score_mask] = -torch.inf
+		scores = self.q @ self.k.mT * self.sqrt_head_d
+		scores.masked_fill_(self.score_mask, -torch.inf)
 
 		self.attention = self.activation.forward(scores)
 
 		return self.attention @ self.v
 
 	def backward(self, d_in):
-		d_activation = self.activation.backward(d_in @ self.v.T) * self.sqrt_head_d
-		d_activation[self.score_mask] = 0
+		d_activation = self.activation.backward(d_in @ self.v.mT) * self.sqrt_head_d
+		d_activation.masked_fill_(self.score_mask, 0)
 
 		d_q = d_activation @ self.k
-		d_k = (self.q.T @ d_activation).T
-		d_v = self.attention.T @ d_in
+		d_k = (self.q.mT @ d_activation).mT
+		d_v = self.attention.mT @ d_in
 
 		self.optimizer.backward(
-			w_q = self.x.T @ d_q,
-			w_k = self.x.T @ d_k,
-			w_v = self.x.T @ d_v
+			w_q = torch.einsum('...es,...sh->eh', self.x.mT, d_q), # bes, bsh -> eh
+			w_k = torch.einsum('...es,...sh->eh', self.x.mT, d_k), # bes, bsh -> eh
+			w_v = torch.einsum('...es,...sh->eh', self.x.mT, d_v) # bes, bsh -> eh
 		)
 
-		return d_v @ self.w_v.T + d_k @ self.w_k.T + d_q @ self.w_q.T
+		return d_v @ self.w_v.mT + d_k @ self.w_k.mT + d_q @ self.w_q.mT
 
 	def to_obj(self, save_gradients=False):
 		return {

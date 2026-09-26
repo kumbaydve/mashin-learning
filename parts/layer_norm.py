@@ -1,3 +1,6 @@
+# EINSUM
+
+
 import torch
 
 from universal import NoDropout, Model, Optimizable
@@ -24,10 +27,10 @@ class LayerNorm(Model, Optimizable, NoDropout):
 
 		return self.gamma * self.norm + self.beta
 
-	def backward(self, d_in):
+	def backward(self, d_in): # bse
 		self.optimizer.backward(
-			gamma = torch.sum(d_in * self.norm, dim=0),
-			beta = torch.sum(d_in, dim=0)
+			gamma = torch.einsum('...se->e', d_in * self.norm), # bse -> e
+			beta = torch.einsum('...se->e', d_in) # bse -> e
 		)
 
 		d_pre_norm = d_in * self.gamma / self.std

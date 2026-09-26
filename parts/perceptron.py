@@ -1,3 +1,6 @@
+# EINSUM
+
+
 import torch
 import math
 
@@ -45,11 +48,11 @@ class Perceptron(Model, Optimizable):
 			d_z = self.activation.backward(d_in)
 
 		self.optimizer.backward(
-			w = self.x.T @ d_z,
-			b = torch.sum(d_z, dim=0)
+			w = torch.einsum('...es,...sE->eE', self.x.mT, d_z), # bes, bse -> eE
+			b = torch.einsum('...se->e', d_z) # bse -> e
 		)
 
-		return d_z @ self.w.T
+		return d_z @ self.w.mT
 
 	def to_obj(self, save_gradients=False):
 		return {

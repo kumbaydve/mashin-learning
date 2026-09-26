@@ -1,3 +1,6 @@
+# EINSUM
+
+
 import torch
 import math
 
@@ -29,11 +32,11 @@ class MultiHeadAttention(Model, Optimizable, NoDropout):
 
 		return self.concat @ self.w_out
 
-	def backward(self, d_in):
-		d_concat = d_in @ self.w_out.T
+	def backward(self, d_in): # bse
+		d_concat = d_in @ self.w_out.mT # bse, Ee -> bse
 
 		self.optimizer.backward(
-			w_out = self.concat.T @ d_in
+			w_out = torch.einsum('...es,...sE->eE', self.concat.mT, d_in) # bes, bse -> eE
 		)
 
 		d_heads = torch.split(d_concat, split_size_or_sections=self.head_d, dim=-1)

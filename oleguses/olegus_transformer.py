@@ -1,3 +1,6 @@
+# EINSUM
+
+
 import math
 
 import torch
@@ -61,22 +64,26 @@ class OlegusTransformer(Model, Savable):
 		return self.y
 
 	def get_loss(self, next_ix):
-		return torch.mean(-torch.log(self.y[torch.arange(self.seq_len), torch.cat((self.ixs[1:], next_ix))]))
+		#print(self.y.shape)
+		#print(self.ixs.shape)
+		#print(torch.cat((self.ixs[:, 1:], next_ix.unsqueeze(1)), dim=-1).shape)
+		return torch.mean(-torch.log(self.y[:, :, torch.cat((self.ixs[:, 1:], next_ix.unsqueeze(1)), dim=-1)]))
 
 	def backward(self, next_ix):
-		d_in = self.y.detach().clone()
-		d_in[torch.arange(self.seq_len), torch.cat((self.ixs[1:], next_ix))] -= 1
+		d_in = self.y.detach().clone() # bsd
+		d_in[:, :, torch.cat((self.ixs[:, 1:], next_ix.unsqueeze(1)), dim=-1)] -= 1
 
 		self.optimizer.backward(
-			b_out = torch.sum(d_in, dim=0),
-			w_out = self.layers_y.T @ d_in
+			b_out = torch.einsum('...sd->d', d_in), # bsd -> d
+			w_out = torch.einsum('...es,...sd->ed', self.layers_y.mT, d_in) # bes, bsd -> ed
 		)
 
-		d_in = self.layer_sequence.backward(d_in @ self.w_out.T)
+		d_in = self.layer_sequence.backward(d_in @ self.w_out.mT) # bsd, de -> bse
 
-		self.optimizer.backward(
-			embedding_matrix = ((self.ixs, slice(self.embedding_d)), d_in)
-		)
+		for i in range(self.ixs.shape[0]):
+			self.optimizer.backward(
+				embedding_matrix = ((self.ixs[i], slice(self.embedding_d)), d_in[i])
+			)
 
 	def drop_gradient(self):
 		self.optimizer.drop_gradient()

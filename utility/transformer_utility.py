@@ -1,4 +1,5 @@
 import torch
+from torch.utils.benchmark.utils.fuzzer import dtype_size
 
 from constants import INT, ERROR_TOKEN, ERROR_TOKEN_IX
 from parts.single_head_attention import SingleHeadAttention
@@ -90,12 +91,12 @@ def ixs_to_subsequences(ixs, length):
 
 
 def ixs_to_next_ixs(ixs, length):
-	res = []
+	res = torch.empty(ixs.shape[0] - length + 1, dtype=INT)
 
 	for i in range(ixs.shape[0] - length):
-		res.append(ixs[i + length].unsqueeze(0))
+		res[i] = ixs[i + length]
 
-	res.append(ixs[0].unsqueeze(0))
+	res[-1] = ixs[0]
 
 	return res
 
